@@ -1,0 +1,14 @@
+{
+  "username": "username-1",
+  "firstname": "username-1",
+  "lastname": "username-1",
+  "password": "Us3rn@m3-!",
+  "email": "username-1@gmail.com",
+  "is_active": false,
+  "privileges": [
+    {
+      "service_id": 1,
+      "role_id": 1
+    }
+  ]
+}

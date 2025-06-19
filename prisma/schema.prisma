@@ -1,0 +1,494 @@
+// This is your Prisma schema file.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["auth_service", "mind_max_service", "email_service", "notification_service", "convoc_service", "file_service"]
+}
+
+// --- Auth Service Schema ---
+// This schema is for the authentication service, managing users, roles, permissions, and services.
+model Users {
+  id                BigInt              @id @default(autoincrement())
+  firstname         String?              @db.VarChar(50)
+  lastname          String?              @db.VarChar(100)
+  username          String?              @unique @db.VarChar(50)
+  email             String?              @unique
+  password          String?
+  avatar             String?             @db.Text
+  is_active         Boolean             @default(false)
+  is_email_verified       Boolean              @default(false)
+  type_profil       String?              @db.VarChar(50)
+  valid_or_reset_token String? @unique
+  expiry_reset      BigInt?
+  email_verified_at DateTime?
+  deleted           Boolean             @default(false)
+  version           Int                 @default(1)
+  created_at        DateTime            @default(now())
+  updated_at        DateTime            @updatedAt
+
+  refresh_tokens RefreshTokens[]
+  user_role_services  UserRoleServices[]
+  preparateur         Preparateurs?
+  emails Emails[]
+  notification_tokens NotificationTokens[]
+  user_organisations UserOrganisations[]
+  membres       Membres[]
+  files       Files[]
+
+  @@map("users")
+  @@schema("auth_service")
+}
+
+model Services {
+  id                BigInt              @id @default(autoincrement())
+  name              String              @unique
+  description       String?
+  deleted           Boolean             @default(false)
+  version           Int                 @default(1)
+  created_at        DateTime            @default(now())
+  updated_at        DateTime            @updatedAt
+
+  user_role_services  UserRoleServices[]
+  roles             Roles[]
+  type_files        TypeFiles[]
+
+
+  @@map("services")
+  @@schema("auth_service")
+}
+
+model Roles {
+  id                BigInt              @id @default(autoincrement())
+  name              String
+  description       String?
+  service_id         BigInt?
+  deleted           Boolean             @default(false)
+  version           Int                 @default(1)
+  created_at        DateTime            @default(now())
+  updated_at        DateTime            @updatedAt
+
+  service           Services?            @relation(fields: [service_id], references: [id])
+  role_permissions   RolePermissions[]
+  user_role_services  UserRoleServices[]
+  equipe_membres EquipeMembres[]
+
+  @@unique([name, service_id])
+  @@map("roles")
+  @@schema("auth_service")
+}
+
+model Permissions {
+  id                BigInt              @id @default(autoincrement())
+  name              String              @unique
+  description       String?
+  deleted           Boolean             @default(false)
+  version           Int                 @default(1)
+  created_at        DateTime            @default(now())
+  updated_at        DateTime            @updatedAt
+
+  role_permissions   RolePermissions[]
+
+  @@map("permissions")
+  @@schema("auth_service")
+}
+
+model RolePermissions {
+  id           BigInt      @id @default(autoincrement())
+  role_id       BigInt
+  permission_id BigInt
+
+  role         Roles        @relation(fields: [role_id], references: [id])
+  permission   Permissions  @relation(fields: [permission_id], references: [id])
+
+  @@unique([role_id, permission_id])
+  @@map("role_permissions")
+  @@schema("auth_service")
+}
+
+model UserRoleServices {
+  id          BigInt    @id @default(autoincrement())
+  user_id      BigInt
+  role_id      BigInt
+  service_id   BigInt
+  user        Users      @relation(fields: [user_id], references: [id])
+  role        Roles      @relation(fields: [role_id], references: [id])
+  service     Services   @relation(fields: [service_id], references: [id])
+
+  @@unique([user_id, role_id, service_id])
+  @@map("user_role_services")
+  @@schema("auth_service")
+}
+
+model RefreshTokens {
+  id             BigInt       @id @default(autoincrement())
+  token          String       @unique
+  expiry_date    DateTime
+  user_id BigInt
+  user    Users @relation(fields: [user_id], references: [id])
+
+  @@map("refresh_tokens")
+  @@schema("auth_service")
+}
+
+
+// --- Mind Max Service Schema ---
+// This schema is for the Mind Max service, managing preparateurs and their specific data.
+model Preparateurs {
+  id         BigInt    @id @default(autoincrement())
+  user_id    BigInt    @unique
+  specialite String?   @db.VarChar(100) // exemple de champ spécifique à Preparateurs
+  agence     String?   @db.VarChar(100) // exemple de champ spécifique à Preparateurs
+  deleted    Boolean   @default(false)
+  version    Int       @default(1)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  user        Users      @relation(fields: [user_id], references: [id])
+
+  @@map("preparateurs")
+  @@schema("mind_max_service")
+}
+
+// -- Email Templates Schema --
+model Emails {
+  id          BigInt    @id @default(autoincrement())
+  user_id     BigInt    
+  subject     String
+  body        String
+  deleted    Boolean   @default(false)
+  version    Int       @default(1)
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  user    Users @relation(fields: [user_id], references: [id])
+
+  @@map("emails")
+  @@schema("email_service")
+}
+
+model NotificationTokens {
+  id                BigInt      @id @default(autoincrement())
+  user_id            BigInt
+  device_type       String?
+  version    Int       @default(1)
+  notification_token String     @unique
+  deleted           Boolean     @default(false)
+  created_at        DateTime    @default(now())
+  updated_at        DateTime    @updatedAt
+
+  user    Users @relation(fields: [user_id], references: [id])
+
+  // Relations
+  notifications     Notifications[]
+
+  @@map("notification_tokens")
+  @@schema("notification_service")
+}
+
+model Notifications {
+  id                    BigInt                 @id @default(autoincrement())
+  notification_token_id  BigInt?
+  title                 String?
+  body                  String?             @db.Text
+  room                  String?             @default("")
+  created_at            DateTime            @default(now())
+
+  notification_token     NotificationTokens? @relation(fields: [notification_token_id], references: [id])
+
+  @@map("notifications")
+  @@schema("notification_service")
+}
+
+// =====================
+// ---- CONVOC ----
+// =====================
+// This schema is for the Convoc service, managing organisations, responsables, membres, evenements, convocations, and their relationships.
+// =====================
+// Table: Organisations
+// =====================
+model Organisations {
+  id              BigInt    @id @default(autoincrement())
+  nom             String
+  desciption      String?
+  devise          String?
+  equipe_max       Int    @default(2)
+  evenement_actifs Int    @default(2)
+  membre_equipe_actifs Int    @default(25)
+  membre_event_max  Int    @default(50)
+  membre_actifs    Int    @default(50)
+  convoc_max       Int    @default(2)
+  logo            String?   @db.Text
+  deleted         Boolean   @default(false)
+  version         Int     @default(1) 
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  responsables    Responsables[]
+  membres         Membres[]
+  equipes         Equipes[]
+  evenements      Evenements[]
+  user_organisations UserOrganisations[]
+
+  @@map("organisations")
+  @@schema("convoc_service")
+}
+
+// =====================
+// Table: Responsables
+// =====================
+model Responsables {
+  id            BigInt         @id @default(autoincrement())
+  email         String?        
+  libelle       String?
+  telephone     String?
+  adresse       String?
+  organisation  Organisations? @relation(fields: [organisation_id], references: [id])
+  organisation_id BigInt?
+  deleted       Boolean        @default(false)
+  version       Int    @default(1)
+  created_at     DateTime       @default(now())
+  updated_at     DateTime       @updatedAt
+  membres       Membres[]
+
+  @@unique([email, organisation_id])
+
+  @@map("responsables")
+  @@schema("convoc_service")
+}
+
+// =====================
+// Table: Membres
+// =====================
+model Membres {
+  id             BigInt         @id @default(autoincrement())
+  slug           String?        @unique
+  libelle        String?
+  adresse        String?
+  email          String?        @unique
+  telephone      String?
+  user           Users?      @relation(fields: [user_id], references: [id])
+  user_id      BigInt?
+  responsable    Responsables?  @relation(fields: [responsable_id], references: [id])
+  responsable_id  BigInt?
+  organisation   Organisations? @relation(fields: [organisation_id], references: [id])
+  organisation_id BigInt?
+  actif          Boolean        @default(false)
+  has_responsable Boolean        @default(false)
+  date_fin        DateTime?
+  deleted        Boolean        @default(false)
+  version        Int    @default(1)
+  created_at      DateTime       @default(now())
+  updated_at      DateTime       @updatedAt
+
+  equipe_membres  EquipeMembres[]
+  evenements     Evenements[]
+  convocations_membres ConvocationMembres[]
+
+  @@map("membres")
+  @@schema("convoc_service")
+}
+
+// =====================
+// Table: Evenements
+// =====================
+model Evenements {
+  id            BigInt         @id @default(autoincrement())
+  libelle       String
+  description   String?
+  coordinateur  Membres?       @relation(fields: [coordinateur_id], references: [id])
+  coordinateur_id BigInt?
+  date_debut     DateTime?
+  date_fin       DateTime?
+
+  organisation  Organisations? @relation(fields: [organisation_id], references: [id])
+  organisation_id BigInt?
+  envoyer       Boolean        @default(false)
+  deleted       Boolean        @default(false)
+  version       Int   @default(1)
+  created_at     DateTime       @default(now())
+  updated_at     DateTime       @updatedAt
+  convocations  Convocations[]
+  evenement_equipes EvenementEquipes[]
+
+  @@map("evenements")
+  @@schema("convoc_service")
+}
+
+// =====================
+// Table: Equipes
+// =====================
+model Equipes {
+  id            BigInt         @id @default(autoincrement())
+  libelle       String
+  description   String?
+  organisation  Organisations? @relation(fields: [organisation_id], references: [id])
+  organisation_id BigInt?
+  actif         Boolean        @default(false)
+  date_fin       DateTime?
+  deleted       Boolean        @default(false)
+  version       Int @default(1)
+  created_at     DateTime       @default(now())
+  updated_at     DateTime       @updatedAt
+  equipe_membres EquipeMembres[]
+  evenement_equipes EvenementEquipes[]
+
+  @@map("equipes")
+  @@schema("convoc_service")
+}
+
+// =====================
+// Table: Convocations
+// =====================
+model Convocations {
+  id            BigInt        @id @default(autoincrement())
+  date_envoi     DateTime?
+  evenement     Evenements?   @relation(fields: [evenement_id], references: [id])
+  evenement_id   BigInt?
+  slug          String?       @unique
+  envoyer       Boolean       @default(false)
+  deleted       Boolean       @default(false)
+  version       Int     @default(1)
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
+  reponse_convocations      ReponseConvocations[]
+  convocation_membres ConvocationMembres[]
+
+  @@map("convocations")
+  @@schema("convoc_service")
+}
+
+// =====================
+// Table: ReponseConvocations
+// =====================
+model ReponseConvocations {
+  id           BigInt        @id @default(autoincrement())
+  choix        String?
+  alerte       Boolean       @default(false)
+  description  String?
+  convocation  Convocations? @relation(fields: [convocation_id], references: [id])
+  convocation_id BigInt?
+  date_envoi    DateTime?
+  deleted      Boolean       @default(false)
+  version      Int  @default(1)
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
+
+
+  @@map("reponse_convocations")
+  @@schema("convoc_service")
+}
+
+// =====================
+// Table: UserOrganisations (join table)
+// =====================
+model UserOrganisations {
+  user_id       BigInt
+  organisation_id  BigInt
+
+  user         Users      @relation(fields: [user_id], references: [id])
+  organisation    Organisations @relation(fields: [organisation_id], references: [id])
+
+  @@id([user_id, organisation_id])
+
+   @@map("user_organisations")
+  @@schema("convoc_service")
+}
+
+// =====================
+// Table: EquipeMembres (join table)
+// =====================
+model EquipeMembres {
+  equipe_id     BigInt
+  membre_id     BigInt
+  role_id       BigInt?      
+
+  equipe       Equipes   @relation(fields: [equipe_id], references: [id])
+  membre       Membres   @relation(fields: [membre_id], references: [id])
+  role         Roles?    @relation(fields: [role_id], references: [id])
+
+  @@id([equipe_id, membre_id])
+
+  @@map("equipe_membres")
+  @@schema("convoc_service")
+}
+
+model ConvocationMembres {
+  convocation_id     BigInt
+  membre_id     BigInt
+  role_id       BigInt?      
+
+  convocation       Convocations   @relation(fields: [convocation_id], references: [id])
+  membre       Membres   @relation(fields: [membre_id], references: [id])
+
+  @@id([convocation_id, membre_id])
+
+  @@map("convocation_membres")
+  @@schema("convoc_service")
+}
+
+// =====================
+// Table: EvenementEquipes (join table)
+// =====================
+model EvenementEquipes {
+  evenement_id  BigInt
+  equipe_id     BigInt
+
+  evenement    Evenements @relation(fields: [evenement_id], references: [id])
+  equipe       Equipes    @relation(fields: [equipe_id], references: [id])
+
+  @@id([evenement_id, equipe_id])
+
+  @@map("evenement_equipes")
+  @@schema("convoc_service")
+}
+
+// ====================
+// 
+
+model TypeFiles {
+  id         BigInt   @id @default(autoincrement())
+  service_id  BigInt?
+  service     Services?    @relation(fields: [service_id], references: [id])
+  libelle    String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  version    Int      @default(1)
+  deleted_at DateTime?
+  deleted    Boolean  @default(false)
+
+  files      Files[]
+
+  @@map("type_files")
+  @@schema("file_service")
+}
+
+// =====================
+// Table: Files
+// =====================
+model Files {
+  id            BigInt        @id @default(autoincrement())
+  type_file_id  BigInt?
+  type_file     TypeFiles?    @relation(fields: [type_file_id], references: [id])
+  user_id  BigInt?
+  user     Users?    @relation(fields: [user_id], references: [id])
+  filename      String?       @db.Text
+  origine_name  String?       @db.Text
+  buffer        String?       @db.Text
+  mimetype      String?       @db.VarChar(150)
+  path          String?       @db.Text
+  file_dir      String?       @db.Text
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
+  version       Int           @default(1)
+  deleted_at    DateTime?
+  deleted       Boolean       @default(false)
+
+  @@map("files")
+  @@schema("file_service")
+}
