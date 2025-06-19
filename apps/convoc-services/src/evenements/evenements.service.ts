@@ -15,8 +15,6 @@ import {
   searchEvenements,
 } from './entities/evenement.utils';
 import { StatusResponseDto } from './dto/status-response.dto';
-import { FilterConvocDto } from '../dto/filter-convoc.dto';
-import { MembresEntity } from '../membres/entities/membre.entity';
 
 @Injectable()
 export class EvenementsService {

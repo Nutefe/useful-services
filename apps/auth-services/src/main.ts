@@ -41,6 +41,7 @@ async function bootstrap() {
     .setDescription('AUTH API is a REST API for managing the users data')
     .setVersion('1.0')
     .addTag('Endpoints')
+    .addServer('https://useful.cyberethik.com/auth-service')
     .addBearerAuth(
       {
         description: 'JWT Authorization',
