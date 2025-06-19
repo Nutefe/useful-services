@@ -279,136 +279,136 @@ export class EvenementsService {
     );
   }
 
-  async findAllByFilterPage(
-    filter: FilterConvocDto,
-    evenement_id: number,
-  ): Promise<DataResponse> {
-    const { take, page, skip } = formatPage(filter.take, filter.page);
-    const { equipes, membres, dateReponse, reponses } = filter;
+  // async findAllByFilterPage(
+  //   filter: FilterConvocDto,
+  //   evenement_id: number,
+  // ): Promise<DataResponse> {
+  //   const { take, page, skip } = formatPage(filter.take, filter.page);
+  //   const { equipes, membres, dateReponse, reponses } = filter;
 
-    // Define the where condition for the search
-    if (reponses && reponses.length > 0) {
-      const whereCondition: Prisma.ReponseConvocationsWhereInput = {
-        deleted: false,
-        convocation: {
-          evenement_id: evenement_id,
-        },
-        OR: [
-          { convocation: { membre: { libelle: { in: membres } } } },
-          {
-            convocation: {
-              membre: {
-                equipe_membres: {
-                  some: {
-                    equipe: {
-                      libelle: { in: equipes },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          {
-            choix: { in: reponses },
-          },
-        ],
-      };
+  //   // Define the where condition for the search
+  //   if (reponses && reponses.length > 0) {
+  //     const whereCondition: Prisma.ReponseConvocationsWhereInput = {
+  //       deleted: false,
+  //       convocation: {
+  //         evenement_id: evenement_id,
+  //       },
+  //       OR: [
+  //         { convocation: { membre: { libelle: { in: membres } } } },
+  //         {
+  //           convocation: {
+  //             membre: {
+  //               equipe_membres: {
+  //                 some: {
+  //                   equipe: {
+  //                     libelle: { in: equipes },
+  //                   },
+  //                 },
+  //               },
+  //             },
+  //           },
+  //         },
+  //         {
+  //           choix: { in: reponses },
+  //         },
+  //       ],
+  //     };
 
-      if (dateReponse && dateReponse?.length >= 2) {
-        whereCondition.date_envoi = {
-          gte: new Date(dateReponse[0]),
-          lte: new Date(dateReponse[1]),
-        };
-      }
+  //     if (dateReponse && dateReponse?.length >= 2) {
+  //       whereCondition.date_envoi = {
+  //         gte: new Date(dateReponse[0]),
+  //         lte: new Date(dateReponse[1]),
+  //       };
+  //     }
 
-      const evenements =
-        await this.databaseService.reponseConvocations.findMany({
-          where: whereCondition,
-          skip,
-          take,
-          select: {
-            convocation: true,
-          },
-        });
+  //     const evenements =
+  //       await this.databaseService.reponseConvocations.findMany({
+  //         where: whereCondition,
+  //         skip,
+  //         take,
+  //         select: {
+  //           convocation: true,
+  //         },
+  //       });
 
-      const convocation_id = evenements.map((event) =>
-        Number(event?.convocation?.id),
-      );
+  //     const convocation_id = evenements.map((event) =>
+  //       Number(event?.convocation?.id),
+  //     );
 
-      const members = await this.databaseService.convocationMembres.findMany({
-        where: { convocation_id: { in: convocation_id } },
-        distinct: ['membre_id'],
-        select: {
-          membre: true,
-        },
-      });
+  //     const members = await this.databaseService.convocationMembres.findMany({
+  //       where: { convocation_id: { in: convocation_id } },
+  //       distinct: ['membre_id'],
+  //       select: {
+  //         membre: true,
+  //       },
+  //     });
 
-      const total = members.length;
+  //     const total = members.length;
 
-      const datas = members.map((member) => new MembresEntity(member.membre));
+  //     const datas = members.map((member) => new MembresEntity(member.membre));
 
-      return new DataResponse(
-        total,
-        take,
-        page,
-        Math.ceil(total / take),
-        page + 1,
-        page - 1,
-        datas,
-      );
-    } else {
-      const whereCondition: Prisma.ConvocationsWhereInput = {
-        deleted: false,
-        evenement_id: evenement_id,
-        OR: [
-          {
-            membre: { libelle: { in: membres } },
-          },
-          {
-            membre: {
-              equipe_membres: {
-                some: {
-                  equipe: {
-                    libelle: { in: equipes },
-                  },
-                },
-              },
-            },
-          },
-        ],
-      };
+  //     return new DataResponse(
+  //       total,
+  //       take,
+  //       page,
+  //       Math.ceil(total / take),
+  //       page + 1,
+  //       page - 1,
+  //       datas,
+  //     );
+  //   } else {
+  //     const whereCondition: Prisma.ConvocationsWhereInput = {
+  //       deleted: false,
+  //       evenement_id: evenement_id,
+  //       OR: [
+  //         {
+  //           membre: { libelle: { in: membres } },
+  //         },
+  //         {
+  //           membre: {
+  //             equipe_membres: {
+  //               some: {
+  //                 equipe: {
+  //                   libelle: { in: equipes },
+  //                 },
+  //               },
+  //             },
+  //           },
+  //         },
+  //       ],
+  //     };
 
-      const evenements = await this.databaseService.convocations.findMany({
-        where: whereCondition,
-        skip,
-        take,
-      });
+  //     const evenements = await this.databaseService.convocations.findMany({
+  //       where: whereCondition,
+  //       skip,
+  //       take,
+  //     });
 
-      const convocation_id = evenements.map((event) => Number(event?.id));
+  //     const convocation_id = evenements.map((event) => Number(event?.id));
 
-      const members = await this.databaseService.convocationMembres.findMany({
-        where: { convocation_id: { in: convocation_id } },
-        distinct: ['membre_id'],
-        select: {
-          membre: true,
-        },
-      });
+  //     const members = await this.databaseService.convocationMembres.findMany({
+  //       where: { convocation_id: { in: convocation_id } },
+  //       distinct: ['membre_id'],
+  //       select: {
+  //         membre: true,
+  //       },
+  //     });
 
-      const total = members.length;
+  //     const total = members.length;
 
-      const datas = members.map((member) => new MembresEntity(member.membre));
+  //     const datas = members.map((member) => new MembresEntity(member.membre));
 
-      return new DataResponse(
-        total,
-        take,
-        page,
-        Math.ceil(total / take),
-        page + 1,
-        page - 1,
-        datas,
-      );
-    }
-  }
+  //     return new DataResponse(
+  //       total,
+  //       take,
+  //       page,
+  //       Math.ceil(total / take),
+  //       page + 1,
+  //       page - 1,
+  //       datas,
+  //     );
+  //   }
+  // }
 
   async findOne(id: number): Promise<EvenementsEntity> {
     const evenement = await this.databaseService.evenements.findUnique({
