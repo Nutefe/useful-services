@@ -145,11 +145,14 @@ export class MembresController {
   })
   @HasRoles(RoleEnum.ROLE_ADMIN)
   @HasPermissions(PermissionEnum.READ)
-  findNotActitByEquipe(@Param('id') id: number) {
-    return this.membresService.findAllNotActifByEquipeId(id);
+  findNotActitByEquipe(
+    @Param('id') id: number,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.membresService.findAllNotActifByEquipeId(id, user.id);
   }
 
-  @Get('membres/organisation/:id')
+  @Get('membres/organisation')
   @ApiOkResponse({
     description: 'The members of organisation are been successfully selected.',
     type: MembresEntity,
@@ -159,11 +162,11 @@ export class MembresController {
   })
   @HasRoles(RoleEnum.ROLE_ADMIN)
   @HasPermissions(PermissionEnum.READ)
-  findByOrganisation(@Param('id') id: number) {
-    return this.membresService.findAllByOrganisationId(id);
+  findByOrganisation(@CurrentUser() user: JwtPayload) {
+    return this.membresService.findAllByOrganisationId(user.id);
   }
 
-  @Get('membres/organisation/actif/:id')
+  @Get('membres/organisation/actif')
   @ApiOkResponse({
     description: 'The members of organisation are been successfully selected.',
     type: MembresEntity,
@@ -173,8 +176,8 @@ export class MembresController {
   })
   @HasRoles(RoleEnum.ROLE_ADMIN)
   @HasPermissions(PermissionEnum.READ)
-  findActifByOrganisation(@Param('id') id: number) {
-    return this.membresService.findAllActifByOrganisationId(id);
+  findActifByOrganisation(@CurrentUser() user: JwtPayload) {
+    return this.membresService.findAllActifByOrganisationId(user.id);
   }
 
   @Get('membres/invite/evenement/:id')

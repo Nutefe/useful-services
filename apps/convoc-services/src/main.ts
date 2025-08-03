@@ -21,17 +21,17 @@ async function bootstrap() {
       queueOptions: {
         durable: false,
       },
-      prefetchCount: 1,
-      noAck: false,
-      isGlobal: true,
-      persistent: true,
-      retryAttempts: 5,
-      retryDelay: 3000,
-      socketOptions: {
-        timeout: 5000,
-        keepAlive: true,
-        heartbeat: 60,
-      },
+      // prefetchCount: 1,
+      // noAck: false,
+      // isGlobal: true,
+      // persistent: true,
+      // retryAttempts: 5,
+      // retryDelay: 3000,
+      // socketOptions: {
+      //   timeout: 5000,
+      //   keepAlive: true,
+      //   heartbeat: 60,
+      // },
     },
   });
 
@@ -40,6 +40,8 @@ async function bootstrap() {
     .setDescription('AUTH API is a REST API for managing the users data')
     .setVersion('1.0')
     .addTag('Endpoints')
+    .addServer('http://127.0.0.1:3008')
+    .addServer('https://useful.cyberethik.com/convoc-service')
     .addBearerAuth(
       {
         description: 'JWT Authorization',

@@ -1,4 +1,9 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateConvocationDto } from './dto/create-convocation.dto';
 import {
   ConvocationMailDto,
@@ -19,6 +24,7 @@ import {
   includeConvocations,
   searchConvocations,
 } from './entities/convocation.utils';
+import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class ConvocationsService {
@@ -27,8 +33,8 @@ export class ConvocationsService {
     private readonly organisationService: OrganisationsService,
     @Inject(process.env.EMAIL_SERVICE ?? 'email-service')
     private readonly emailServicesService: ClientProxy,
-    @Inject(process.env.NOTIFICATION_SERVICE ?? 'notification-service')
-    private readonly notificationServicesService: ClientProxy,
+    // @Inject(process.env.NOTIFICATION_SERVICE ?? 'notification-service')
+    // private readonly notificationServicesService: ClientProxy,
   ) {}
 
   async create(
@@ -44,7 +50,7 @@ export class ConvocationsService {
       },
     });
     if (alreadyConvoked) {
-      throw new Error('This event is already convoked');
+      throw new ConflictException('This event is already convoked');
     }
 
     // check if equipe is already convoked this week
@@ -66,7 +72,7 @@ export class ConvocationsService {
       });
 
     if (alreadyConvokedThisWeek) {
-      throw new Error('This equipe is already convoked this week');
+      throw new ConflictException('This equipe is already convoked this week');
     }
 
     // check max convocation for this organisation
@@ -74,7 +80,7 @@ export class ConvocationsService {
       user_id ?? 0,
     );
     if (!organisation) {
-      throw new Error('Organisation not found');
+      throw new ConflictException('Organisation not found');
     }
 
     const countConvocations = await this.databaseService.convocations.count({
@@ -90,7 +96,7 @@ export class ConvocationsService {
       organisation.convocMax &&
       organisation.convocMax === countConvocations
     ) {
-      throw new Error(
+      throw new ConflictException(
         'Maximum number of convocations reached for this organisation',
       );
     }
@@ -98,6 +104,7 @@ export class ConvocationsService {
     // create convocation
 
     const slug = await this.createConvocWithUniqueCode();
+
     const convocation = await this.databaseService.convocations.create({
       data: {
         date_envoi: new Date(),
@@ -105,7 +112,7 @@ export class ConvocationsService {
         envoyer: true,
         slug: slug,
         convocation_membres: {
-          create: createConvocationDto.membre_ids.map((membre) => ({
+          create: createConvocationDto.membre_ids?.map((membre) => ({
             membre_id: membre,
           })),
         },
@@ -113,9 +120,14 @@ export class ConvocationsService {
       include: {
         convocation_membres: {
           include: {
-            membre: true,
+            membre: {
+              include: {
+                responsable: true,
+              },
+            },
           },
         },
+        evenement: true,
       },
     });
 
@@ -123,14 +135,7 @@ export class ConvocationsService {
 
     if (convocationEntity) {
       // send email to members
-      this.emailServicesService.emit('convocation_created', {
-        convocation: convocationEntity,
-      });
-
-      // send notification to members
-      this.notificationServicesService.emit('convocation_created', {
-        convocation: convocationEntity,
-      });
+      await this.sendConvocation(convocationEntity);
     }
 
     return convocationEntity;
@@ -149,7 +154,7 @@ export class ConvocationsService {
       },
     });
     if (alreadyConvoked) {
-      throw new Error('This event is already convoked');
+      throw new ConflictException('This event is already convoked');
     }
 
     // check if equipe is already convoked this week
@@ -171,7 +176,7 @@ export class ConvocationsService {
       });
 
     if (alreadyConvokedThisWeek) {
-      throw new Error('This equipe is already convoked this week');
+      throw new ConflictException('This equipe is already convoked this week');
     }
 
     // check max convocation for this organisation
@@ -179,7 +184,7 @@ export class ConvocationsService {
       user_id ?? 0,
     );
     if (!organisation) {
-      throw new Error('Organisation not found');
+      throw new ConflictException('Organisation not found');
     }
 
     const countConvocations = await this.databaseService.convocations.count({
@@ -195,7 +200,7 @@ export class ConvocationsService {
       organisation.convocMax &&
       organisation.convocMax === countConvocations
     ) {
-      throw new Error(
+      throw new ConflictException(
         'Maximum number of convocations reached for this organisation',
       );
     }
@@ -245,14 +250,7 @@ export class ConvocationsService {
 
     if (convocationEntity) {
       // send email to members
-      this.emailServicesService.emit('convocation_created', {
-        convocation: convocationEntity,
-      });
-
-      // send notification to members
-      this.notificationServicesService.emit('convocation_created', {
-        convocation: convocationEntity,
-      });
+      await this.sendConvocation(convocationEntity);
     }
 
     return convocationEntity;
@@ -271,7 +269,7 @@ export class ConvocationsService {
       },
     });
     if (alreadyConvoked) {
-      throw new Error('This event is already convoked');
+      throw new ConflictException('This event is already convoked');
     }
 
     // check if equipe is already convoked this week
@@ -293,7 +291,7 @@ export class ConvocationsService {
       });
 
     if (alreadyConvokedThisWeek) {
-      throw new Error('This equipe is already convoked this week');
+      throw new ConflictException('This equipe is already convoked this week');
     }
 
     // check max convocation for this organisation
@@ -301,7 +299,7 @@ export class ConvocationsService {
       user_id ?? 0,
     );
     if (!organisation) {
-      throw new Error('Organisation not found');
+      throw new ConflictException('Organisation not found');
     }
 
     const countConvocations = await this.databaseService.convocations.count({
@@ -317,7 +315,7 @@ export class ConvocationsService {
       organisation.convocMax &&
       organisation.convocMax === countConvocations
     ) {
-      throw new Error(
+      throw new ConflictException(
         'Maximum number of convocations reached for this organisation',
       );
     }
@@ -380,82 +378,50 @@ export class ConvocationsService {
 
     if (convocationEntity) {
       // send email to members
-      this.sendConvocation(convocationEntity);
+      await this.sendConvocation(convocationEntity);
     }
 
     return convocationEntity;
   }
 
-  sendConvocation(convocation: ConvocationsEntity): void {
+  async sendConvocation(convocation: ConvocationsEntity) {
     if (!convocation) {
       throw new NotFoundException('Convocation not found');
     }
 
-    if (convocation?.membres && convocation?.membres.length > 0) {
-      convocation?.membres.forEach((membre) => {
-        // send email to members
-        if (membre.hasResponsable) {
-          const convocationData: ConvocationMailDto = {
-            id: Number(convocation.id),
-            name: membre.libelle ?? '',
-            membre: membre.responsable?.libelle ?? '',
-            date_debut: getDateFromDateString(
-              convocation.evenement?.dateDebut ?? '',
-            ),
-            heure_debut: getTimeFromDateString(
-              convocation.evenement?.dateDebut ?? '',
-            ),
-            date_fin: getDateFromDateString(
-              convocation.evenement?.dateFin ?? '',
-            ),
-            heure_fin: getTimeFromDateString(
-              convocation.evenement?.dateFin ?? '',
-            ),
-            evenement: convocation.evenement?.libelle ?? '',
-            slug: convocation.slug ?? '',
-            email: membre.responsable?.email ?? '',
-          };
+    if (convocation.membres && convocation.membres.length > 0) {
+      for (const membre of convocation.membres) {
+        const isResponsable = membre.hasResponsable;
+        const destinataire = isResponsable
+          ? (membre.responsable?.libelle ?? '')
+          : (membre?.libelle ?? '');
+        const email = isResponsable
+          ? (membre.responsable?.email ?? '')
+          : (membre?.email ?? '');
 
-          this.emailServicesService.emit('convocation-send', {
-            convocation: convocationData,
-          });
+        const convocationData: ConvocationMailDto = {
+          id: Number(convocation.id),
+          name: membre.libelle ?? '',
+          membre: destinataire,
+          date_debut: getDateFromDateString(
+            convocation.evenement?.dateDebut ?? '',
+          ),
+          heure_debut: getTimeFromDateString(
+            convocation.evenement?.dateDebut ?? '',
+          ),
+          date_fin: getDateFromDateString(convocation.evenement?.dateFin ?? ''),
+          heure_fin: getTimeFromDateString(
+            convocation.evenement?.dateFin ?? '',
+          ),
+          evenement: convocation.evenement?.libelle ?? '',
+          slug: convocation.slug ?? '',
+          email: email,
+        };
 
-          // send notification to members
-          // this.notificationServicesService.emit('convocation_created', {
-          //   convocation: convocationData,
-          // });
-        } else {
-          const convocationData: ConvocationMailDto = {
-            id: Number(convocation.id),
-            name: membre.libelle ?? '',
-            membre: membre?.libelle ?? '',
-            date_debut: getDateFromDateString(
-              convocation.evenement?.dateDebut ?? '',
-            ),
-            heure_debut: getTimeFromDateString(
-              convocation.evenement?.dateDebut ?? '',
-            ),
-            date_fin: getDateFromDateString(
-              convocation.evenement?.dateFin ?? '',
-            ),
-            heure_fin: getTimeFromDateString(
-              convocation.evenement?.dateFin ?? '',
-            ),
-            evenement: convocation.evenement?.libelle ?? '',
-            slug: convocation.slug ?? '',
-            email: membre.responsable?.email ?? '',
-          };
-
-          this.emailServicesService.emit('convocation-send', {
-            convocation: convocationData,
-          });
-
-          // send notification to members
-          // this.notificationServicesService.emit('convocation_created', {
-          //   convocation: convocationData,
-          // });
-        }
-      });
+        await lastValueFrom(
+          this.emailServicesService.emit('convocation-email', convocationData),
+        );
+      }
     }
   }
 

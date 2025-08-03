@@ -1,7 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConvocController } from './convoc.controller';
 import { ConvocService } from './convoc.service';
-import { DatabaseModule, LoggerModule } from '@app/common';
+import {
+  createRmqClientConfig,
+  DatabaseModule,
+  LoggerModule,
+} from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import * as Joi from 'joi';
 import { OrganisationsModule } from './organisations/organisations.module';
@@ -11,6 +15,7 @@ import { EvenementsModule } from './evenements/evenements.module';
 import { EquipesModule } from './equipes/equipes.module';
 import { ConvocationsModule } from './convocations/convocations.module';
 import { ReponseOnvocationsModule } from './reponse-onvocations/reponse-onvocations.module';
+import { ClientsModule } from '@nestjs/microservices';
 
 @Module({
   imports: [
@@ -38,6 +43,18 @@ import { ReponseOnvocationsModule } from './reponse-onvocations/reponse-onvocati
     EquipesModule,
     ConvocationsModule,
     ReponseOnvocationsModule,
+    ClientsModule.registerAsync([
+      createRmqClientConfig(
+        'AUTH_SERVICE',
+        'RABBITMQ_QUEUE_AUTH',
+        'auth-service',
+      ),
+      createRmqClientConfig(
+        'FILE_SERVICE',
+        'RABBITMQ_QUEUE_FILE',
+        'file-service',
+      ),
+    ]),
   ],
   controllers: [ConvocController],
   providers: [ConvocService],

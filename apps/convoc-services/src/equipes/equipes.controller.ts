@@ -58,8 +58,11 @@ export class EquipesController {
   })
   @HasRoles(RoleEnum.ROLE_ADMIN)
   @HasPermissions(PermissionEnum.CREATE)
-  create(@Body() createEquipeDto: CreateEquipeDto) {
-    return this.equipesService.create(createEquipeDto);
+  create(
+    @Body() createEquipeDto: CreateEquipeDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.equipesService.create(createEquipeDto, user.id);
   }
 
   @Get('equipes')
@@ -86,8 +89,14 @@ export class EquipesController {
   })
   @HasRoles(RoleEnum.ROLE_ADMIN)
   @HasPermissions(PermissionEnum.READ)
-  findExcludeMembresEquipe(@Param('id') id: number) {
-    return this.equipesService.findAllByOrganisationExcludeMembreEquipe(id);
+  findExcludeMembresEquipe(
+    @Param('id') id: number,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.equipesService.findAllByOrganisationExcludeMembreEquipe(
+      id,
+      user.id,
+    );
   }
 
   @Get('equipes/evenement/:id')
@@ -175,8 +184,12 @@ export class EquipesController {
   })
   @HasRoles(RoleEnum.ROLE_ADMIN)
   @HasPermissions(PermissionEnum.UPDATE)
-  update(@Param('id') id: number, @Body() updateEquipeDto: UpdateEquipeDto) {
-    return this.equipesService.update(id, updateEquipeDto);
+  update(
+    @Param('id') id: number,
+    @Body() updateEquipeDto: UpdateEquipeDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.equipesService.update(id, updateEquipeDto, user.id);
   }
 
   @Put('equipe/add/membre/:id')

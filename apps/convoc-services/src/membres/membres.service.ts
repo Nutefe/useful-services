@@ -51,9 +51,9 @@ export class MembresService {
       adresse: createMembreDto.adresse,
       telephone: createMembreDto.telephone,
       slug,
-      hasResponsable: createMembreDto.hasResponsable,
+      has_responsable: createMembreDto.hasResponsable,
       actif: createMembreDto.actif,
-      dateFin: createMembreDto.dateFin,
+      date_fin: createMembreDto.dateFin,
       organisation: { connect: { id: organisation.id } },
     };
 
@@ -70,6 +70,8 @@ export class MembresService {
         data: {
           email: createMembreDto.emailResponsable,
           libelle: createMembreDto.libelleResponsable,
+          telephone: createMembreDto.telephoneResponsable,
+          adresse: createMembreDto.adresseResponsable,
           organisation: { connect: { id: organisation.id } },
         },
       });
@@ -204,7 +206,6 @@ export class MembresService {
         date_fin: {
           gte: new Date(),
         },
-        actif: true,
         equipe_membres: {
           some: { equipe_id: equipe_id },
         },
@@ -231,7 +232,6 @@ export class MembresService {
         date_fin: {
           gte: new Date(),
         },
-        actif: true,
         equipe_membres: {
           some: { equipe_id: { in: equipe_ids } },
         },
@@ -267,7 +267,6 @@ export class MembresService {
           lt: new Date(),
         },
         organisation_id: organisation.id,
-        actif: false,
         equipe_membres: {
           some: { equipe_id: equipe_id },
         },
@@ -589,6 +588,8 @@ export class MembresService {
         data: {
           email: updateMembreDto.emailResponsable,
           libelle: updateMembreDto.libelleResponsable,
+          telephone: updateMembreDto.telephoneResponsable,
+          adresse: updateMembreDto.adresseResponsable,
           organisation: { connect: { id: organisation.id } },
         },
       });

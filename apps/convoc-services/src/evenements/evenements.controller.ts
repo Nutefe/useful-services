@@ -57,8 +57,11 @@ export class EvenementsController {
   })
   @HasRoles(RoleEnum.ROLE_ADMIN)
   @HasPermissions(PermissionEnum.CREATE)
-  create(@Body() createEvenementDto: CreateEvenementDto) {
-    return this.evenementsService.create(createEvenementDto);
+  create(
+    @Body() createEvenementDto: CreateEvenementDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.evenementsService.create(createEvenementDto, user.id);
   }
 
   @Get('evenements')
@@ -77,11 +80,11 @@ export class EvenementsController {
 
   @Get('evenements/equipe/:id')
   @ApiOkResponse({
-    description: 'The events are been successfully selected.',
+    description: 'The events for team are been successfully selected.',
     type: EvenementsEntity,
   })
   @ApiOperation({
-    summary: 'Select all events',
+    summary: 'Select all events for team',
   })
   @HasRoles(RoleEnum.ROLE_ADMIN)
   @HasPermissions(PermissionEnum.READ)
@@ -100,7 +103,7 @@ export class EvenementsController {
   @HasRoles(RoleEnum.ROLE_ADMIN)
   @HasPermissions(PermissionEnum.READ)
   findAllByMembre(@Param('id') id: number) {
-    return this.evenementsService.findAllByEquipeId(id);
+    return this.evenementsService.findAllByMembreId(id);
   }
 
   @Get('evenements/organisation')

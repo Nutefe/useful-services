@@ -44,10 +44,11 @@ export class EmailServicesController {
     return this.emailServicesService.sendConfirmAccountEmail(data);
   }
 
-  //
-  @MessagePattern('convocation-send')
+  @MessagePattern('convocation-email')
   @UsePipes(new ValidationPipe())
   async sendEmailConvocation(@Payload() data: ConvocationMailDto) {
-    return this.emailServicesService.sendConfirmAccountEmail(data);
+    console.log(data);
+
+    return this.emailServicesService.sendConvocationMail(data);
   }
 }

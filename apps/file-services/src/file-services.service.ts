@@ -19,24 +19,26 @@ export class FileServicesService {
     files: FilesCreateGlobalDto[];
   }): Promise<FileResponseDto[]> {
     const response: FileResponseDto[] = [];
-    for (const file of data.files) {
-      const filesDto = new FilesCreateGlobalDto();
-      filesDto.user_id = +file.user_id;
-      filesDto.filename = file.filename;
-      filesDto.origine_name = file.origine_name;
-      filesDto.path = `/home/upload/cyberethik-service/${file.filename}`;
-      filesDto.file_dir = `/home/upload/cyberethik-service/`;
-      filesDto.mimetype = file.mimetype;
-      filesDto.type_file = file.type_file;
+    if (data.files.length > 0) {
+      for (const file of data.files) {
+        const filesDto = new FilesCreateGlobalDto();
+        filesDto.user_id = +file.user_id;
+        filesDto.filename = file.filename;
+        filesDto.origine_name = file.origine_name;
+        filesDto.path = `/home/upload/cyberethik-service/${file.filename}`;
+        filesDto.file_dir = `/home/upload/cyberethik-service/`;
+        filesDto.mimetype = file.mimetype;
+        filesDto.type_file = file.type_file;
 
-      await this.createFileGlobal(filesDto);
+        await this.createFileGlobal(filesDto);
 
-      const fileReponse: FileResponseDto = {
-        originalname: file.origine_name,
-        filename: file.filename,
-        uri: `${this.configService.get<string>('FILE_URI')}${file.filename}`,
-      };
-      response.push(fileReponse);
+        const fileReponse: FileResponseDto = {
+          originalname: file.origine_name,
+          filename: file.filename,
+          uri: `${this.configService.get<string>('FILE_URI')}${file.filename}`,
+        };
+        response.push(fileReponse);
+      }
     }
 
     return response;

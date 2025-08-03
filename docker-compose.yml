@@ -2,18 +2,18 @@
 
 version: '3.8'
 services:
-  # postgres:
-  #   container_name: poc-postgres
-  #   image: postgres
-  #   restart: always
-  #   environment:
-  #     - POSTGRES_USER=poc
-  #     - POSTGRES_PASSWORD=P@ssw0rd
-  #     - POSTGRES_DB=db_poc
-  #   volumes:
-  #     - poc-postgres:/var/lib/postgresql/data
-  #   ports:
-  #     - '5434:5432'
+  postgres:
+    container_name: poc-postgres
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=poc
+      - POSTGRES_PASSWORD=P@ssw0rd
+      - POSTGRES_DB=db_poc
+    volumes:
+      - poc-postgres:/var/lib/postgresql/data
+    ports:
+      - '5434:5432'
 
   rabbitmq:
     container_name: poc-rabbitmq

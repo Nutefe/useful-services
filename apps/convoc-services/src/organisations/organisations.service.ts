@@ -206,9 +206,9 @@ export class OrganisationsService {
   async update(
     id: number,
     updateOrganisationDto: UpdateOrganisationDto,
-    file: Express.Multer.File,
     user: JwtPayload,
     jwt: string,
+    file?: Express.Multer.File,
   ) {
     const organisationOld = await this.databaseService.organisations.findUnique(
       {
@@ -231,20 +231,23 @@ export class OrganisationsService {
       service_name: user.curent_service_name ?? 'convoc-service',
     };
 
-    const filesDto = new FilesCreateGlobalDto();
-    filesDto.user_id = Number(user.id);
-    filesDto.filename = file.filename;
-    filesDto.origine_name = file.originalname;
-    filesDto.path = `/home/upload/cyberethik-service/${file.filename}`;
-    filesDto.file_dir = `/home/upload/cyberethik-service/`;
-    filesDto.mimetype = file.mimetype;
-    filesDto.type_file = type_file;
+    let res: FileResponseDto[] = [];
+    if (file) {
+      const filesDto = new FilesCreateGlobalDto();
+      filesDto.user_id = Number(user.id);
+      filesDto.filename = file.filename;
+      filesDto.origine_name = file.originalname;
+      filesDto.path = `/home/upload/cyberethik-service/${file.filename}`;
+      filesDto.file_dir = `/home/upload/cyberethik-service/`;
+      filesDto.mimetype = file.mimetype;
+      filesDto.type_file = type_file;
 
-    const files: FilesCreateGlobalDto[] = [filesDto];
+      const files: FilesCreateGlobalDto[] = [filesDto];
 
-    const res: FileResponseDto[] = await lastValueFrom(
-      this.fileServicesService.send('create-file', { files, jwt }),
-    );
+      res = await lastValueFrom(
+        this.fileServicesService.send('create-file', { files, jwt }),
+      );
+    }
 
     const organisation = await this.databaseService.organisations.update({
       where: { id },
@@ -271,7 +274,7 @@ export class OrganisationsService {
         convoc_max: updateOrganisationDto.convocMax
           ? Number(updateOrganisationDto.convocMax)
           : organisationOld.convoc_max,
-        logo: res[0].uri,
+        logo: res[0]?.uri,
         version: { increment: 1 },
       },
     });

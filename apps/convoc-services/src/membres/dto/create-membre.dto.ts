@@ -26,13 +26,13 @@ export class CreateMembreDto {
   @IsString()
   @IsNotEmpty()
   email: string;
-  @ApiProperty({ type: 'string', default: '' })
+  @ApiProperty({ type: 'boolean' })
   @IsBoolean()
   hasResponsable: boolean;
-  @ApiProperty({ type: 'string', default: '' })
+  @ApiProperty({ type: 'boolean' })
   @IsBoolean()
   actif: boolean;
-  @ApiProperty({ type: 'string', default: '' })
+  @ApiProperty()
   @IsDateString()
   @IsNotEmpty()
   dateFin: Date;
@@ -48,19 +48,16 @@ export class CreateMembreDto {
   emailResponsable: string;
 
   @ApiProperty({ type: 'string', default: '' })
-  @IsEmail()
   @IsString()
   @IsNotEmpty()
   libelleResponsable: string;
 
   @ApiProperty({ type: 'string', default: '' })
-  @IsEmail()
   @IsString()
   @IsNotEmpty()
   telephoneResponsable: string;
 
   @ApiProperty({ type: 'string', default: '' })
-  @IsEmail()
   @IsString()
   @IsNotEmpty()
   adresseResponsable: string;

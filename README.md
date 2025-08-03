@@ -58,6 +58,22 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+## Run pm2
+
+```bash
+# install pm2
+$ npm install pm2 -g
+
+# pm2 tests
+$ pm2 start ecosystem.config.js
+
+# auth-services: 3005
+# convoc-service: 3008
+# email-service: 3007
+# file-service: 3009
+# notification-service: 3006
+```
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.

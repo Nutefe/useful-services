@@ -196,7 +196,7 @@ export class OrganisationsController {
   ) {
     const authHeader = req.headers['authorization'] as string;
     const jwt = authHeader?.split(' ')[1];
-    return this.organisationsService.update(id, dataUpload, file[0], user, jwt);
+    return this.organisationsService.update(id, dataUpload, user, jwt, file[0]);
   }
 
   @Delete('organisation/delete/:id')

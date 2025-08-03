@@ -64,7 +64,7 @@ export class EmailServicesService {
     });
   }
 
-  async sendConfirmAccountEmail(user: UserEmailDto) {
+  async sendConfirmAccountEmail(user: UserEmailDto): Promise<boolean> {
     const emailDto = new EmailDto();
     emailDto.user_id = user.id;
     emailDto.subject =
@@ -85,6 +85,8 @@ export class EmailServicesService {
         url,
       },
     });
+
+    return true;
   }
 
   async sendForgetPasswordEmail(user: UserEmailDto) {

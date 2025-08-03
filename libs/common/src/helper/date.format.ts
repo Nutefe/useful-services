@@ -1,9 +1,11 @@
-import moment from 'moment';
+import * as moment from 'moment';
 
 export function getTimeFromDateString(dateString: string): string {
-  return moment(dateString).format('HH:mm');
+  const heure = moment(dateString).format('HH:mm');
+  return heure;
 }
 
 export function getDateFromDateString(dateString: string): string {
-  return moment(dateString).format('DD/MM/YYYY');
+  const date = moment(dateString).format('DD/MM/YYYY');
+  return date;
 }

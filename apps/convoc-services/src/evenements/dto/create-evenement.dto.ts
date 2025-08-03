@@ -17,14 +17,14 @@ export class CreateEvenementDto {
   @IsString()
   @IsOptional()
   description?: string;
-  @ApiProperty({ type: 'string' })
+  @ApiProperty()
   @IsDateString()
   @IsNotEmpty()
-  dateDebut?: string;
-  @ApiProperty({ type: 'string' })
+  dateDebut?: Date;
+  @ApiProperty()
   @IsDateString()
   @IsNotEmpty()
-  dateFin?: string;
+  dateFin?: Date;
   @ApiProperty({ type: 'array', isArray: true, default: [] })
   @IsArray()
   @IsNotEmpty({ each: true })
