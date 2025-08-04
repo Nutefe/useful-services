@@ -348,13 +348,17 @@ export class MembresService {
         evenement_id: evenement_id,
       },
       include: {
-        membre: {
+        convocation_membres: {
           include: {
-            organisation: true,
-            responsable: true,
-            equipe_membres: {
+            membre: {
               include: {
-                equipe: true,
+                organisation: true,
+                responsable: true,
+                equipe_membres: {
+                  include: {
+                    equipe: true,
+                  },
+                },
               },
             },
           },
