@@ -20,7 +20,7 @@ async function bootstrap() {
       urls: [configService.get<string>('RABBITMQ_URI')],
       queue: configService.get<string>('RABBITMQ_QUEUE'),
       queueOptions: {
-        durable: false,
+        durable: true,
       },
       // prefetchCount: 1,
       // noAck: false,
