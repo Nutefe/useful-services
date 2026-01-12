@@ -1,4 +1,4 @@
-name: 🚀 Deploy to VPS
+name: Deploy to VPS
 
 on:
   push:
@@ -11,7 +11,7 @@ on:
 
 jobs:
   deploy:
-    name: 🎯 Deploy to Production
+    name: Deploy to Production
     runs-on: ubuntu-latest
 
     # Ne déployer que sur push (pas sur PR)
