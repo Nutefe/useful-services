@@ -31,7 +31,7 @@ RUN pnpm install --prod
 
 COPY prisma ./prisma
 
-RUN npx prisma generate
+RUN npx prisma@6.8.2 generate
 
 COPY --from=development /usr/src/app/dist ./dist
 

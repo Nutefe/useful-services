@@ -1,0 +1,105 @@
+name: 🚀 Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main # Déclenche sur push vers main
+  pull_request:
+    branches:
+      - main # Déclenche sur PR vers main (pour tests)
+  workflow_dispatch: # Permet de déclencher manuellement
+
+jobs:
+  deploy:
+    name: 🎯 Deploy to Production
+    runs-on: ubuntu-latest
+
+    # Ne déployer que sur push (pas sur PR)
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔑 Setup SSH Connection
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: 📋 Add VPS to Known Hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: 🧪 Test SSH Connection
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh $VPS_USER@$VPS_HOST "echo '✅ SSH connection successful'"
+
+      - name: 🚀 Deploy Application
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PROJECT_DIR: ${{ secrets.VPS_PROJECT_DIR || '/home/deployer/poc-service' }}
+        run: |
+          ssh $VPS_USER@$VPS_HOST << 'ENDSSH'
+            set -e
+            
+            echo "📂 Navigating to project directory..."
+            cd ${{ secrets.VPS_PROJECT_DIR || '/home/deployer/poc-service' }}
+            
+            echo "📥 Pulling latest changes from GitHub..."
+            git fetch origin
+            git reset --hard origin/main
+            git pull origin main
+            
+            echo "🛑 Stopping existing containers..."
+            docker-compose down
+            
+            echo "🏗️ Building Docker images..."
+            docker-compose build --no-cache
+            
+            echo "🚀 Starting services..."
+            docker-compose up -d
+            
+            echo "⏳ Waiting for services to start..."
+            sleep 10
+            
+            echo "📊 Checking services status..."
+            docker-compose ps
+            
+            echo "✅ Deployment completed successfully!"
+          ENDSSH
+
+      - name: 🧹 Cleanup Docker Resources
+        if: success()
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh $VPS_USER@$VPS_HOST << 'ENDSSH'
+            echo "🧹 Cleaning up unused Docker resources..."
+            docker system prune -af --volumes
+            
+            echo "💾 Current disk usage:"
+            df -h | grep -E "Filesystem|/dev/sda|/dev/vda"
+            
+            echo "🐳 Docker images:"
+            docker images
+            
+            echo "✅ Cleanup completed!"
+          ENDSSH
+
+      - name: 📧 Notify Deployment Status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ ✅ ✅ DEPLOYMENT SUCCESSFUL ✅ ✅ ✅"
+            echo "🌐 Application is now live at http://${{ secrets.VPS_HOST }}"
+          else
+            echo "DEPLOYMENT FAILED"
+            echo "⚠️ Check the logs above for details"
+          fi
