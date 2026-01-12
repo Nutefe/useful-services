@@ -43,13 +43,13 @@ jobs:
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_PROJECT_DIR: ${{ secrets.VPS_PROJECT_DIR || '/home/deployer/poc-service' }}
+          VPS_PROJECT_DIR: ${{ secrets.VPS_PROJECT_DIR || 'useful-services' }}
         run: |
           ssh $VPS_USER@$VPS_HOST << 'ENDSSH'
             set -e
             
             echo "📂 Navigating to project directory..."
-            cd ${{ secrets.VPS_PROJECT_DIR || '/home/deployer/poc-service' }}
+            cd ${{ secrets.VPS_PROJECT_DIR || 'useful-services' }}
             
             echo "📥 Pulling latest changes from GitHub..."
             git fetch origin
