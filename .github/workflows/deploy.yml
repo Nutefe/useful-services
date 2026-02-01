@@ -65,19 +65,19 @@ jobs:
             git pull origin main
             
             echo "Arrêt des conteneurs existants..."
-            docker-compose down
+            docker compose down
             
             echo "Construction des images Docker..."
-            docker-compose build --no-cache
+            docker compose build --no-cache
             
             echo "Démarrage des services..."
-            docker-compose up -d
+            docker compose up -d
             
             echo "Attente du démarrage..."
             sleep 20
             
             echo "Vérification de l'état des services..."
-            docker-compose ps
+            docker compose ps
             
             echo "✅ Déploiement terminé!"
           ENDSSH

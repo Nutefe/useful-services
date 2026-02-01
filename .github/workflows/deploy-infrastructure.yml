@@ -51,7 +51,7 @@ jobs:
             chmod 600 acme.json
             
             # Redémarrer Traefik (avec downtime minimal)
-            docker-compose up -d --force-recreate
+            docker compose up -d --force-recreate
             
             echo "✅ Traefik redémarré avec succès!"
             docker ps | grep traefik
