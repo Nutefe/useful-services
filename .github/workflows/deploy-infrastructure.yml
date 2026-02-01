@@ -51,6 +51,7 @@ jobs:
             chmod 600 acme.json
             
             # Redémarrer Traefik (avec downtime minimal)
+            docker compose down --remove-orphans
             docker compose up -d --force-recreate
             
             echo "✅ Traefik redémarré avec succès!"
