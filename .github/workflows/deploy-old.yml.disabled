@@ -1,55 +1,46 @@
-name: Deploiement Applications
+name: Deploiement useful-services
 
 on:
   push:
     branches:
-      - main
+      - main # Déclenche sur push vers main
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-    paths-ignore:
-      - 'traefik/**' # Ignorer les changements de traefik
+      - 'v[0-9]+.[0-9]+.[0-9]+'  # Exemple: v1.2.3
   pull_request:
     branches:
-      - main
+      - main # Déclenche sur PR vers main (pour tests)
 
 jobs:
-  deploy-apps:
-    name: Déploiement des services
+  deploy-useful:
+    name: Lancement du déploiement useful-services
     runs-on: ubuntu-latest
 
+    # Ne déployer que sur push (pas sur PR)
     if: github.event_name == 'push'
 
     steps:
       - name: Verifier le code source
         uses: actions/checkout@v4
 
-      - name: Configuration SSH
+      - name: Configuration agent SSH pour la connexion au serveur
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
 
-      - name: Configuration du SSH
+      - name: Configuration du SSH pour la connexion au serveur
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
-      - name: Vérification de Traefik
+      - name: Test SSH Connection
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
         run: |
-          ssh $VPS_USER@$VPS_HOST << 'ENDSSH'
-            # Vérifier que Traefik tourne
-            if ! docker ps | grep -q traefik; then
-              echo "ERREUR: Traefik n'est pas en cours d'exécution!"
-              echo "Lancez le workflow 'deploy-infrastructure' manuellement d'abord"
-              exit 1
-            fi
-            echo "✅ Traefik est actif"
-          ENDSSH
+          ssh $VPS_USER@$VPS_HOST "echo 'Connexion SSH réussie!'"
 
-      - name: Deploiement des applications
+      - name: Deploiement Application
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -57,9 +48,11 @@ jobs:
         run: |
           ssh $VPS_USER@$VPS_HOST << 'ENDSSH'
             set -e
-
+            
+            echo "Navigation vers le répertoire du projet..."
             cd ${{ secrets.VPS_PROJECT_DIR || 'useful-services' }}
-
+            
+            echo "Récupération des dernières modifications depuis GitHub..."
             git fetch origin
             git reset --hard origin/main
             git pull origin main
@@ -73,13 +66,13 @@ jobs:
             echo "Démarrage des services..."
             docker-compose up -d
             
-            echo "Attente du démarrage..."
-            sleep 20
+            echo "Attente du démarrage des services..."
+            sleep 10
             
             echo "Vérification de l'état des services..."
             docker-compose ps
             
-            echo "✅ Déploiement terminé!"
+            echo "Déploiement terminé avec succès!"
           ENDSSH
 
       - name: Nettoyage des ressources Docker inutilisées
@@ -90,16 +83,13 @@ jobs:
         run: |
           ssh $VPS_USER@$VPS_HOST << 'ENDSSH'
             echo "Nettoyage des ressources Docker inutilisées..."
-            docker system prune -af --volumes || true
+            docker system prune -af --volumes
             
             echo "Utilisation actuelle du disque :"
             df -h | grep -E "Filesystem|/dev/sda|/dev/vda"
             
             echo "Images Docker :"
             docker images
-            
-            echo "Conteneurs en cours d'exécution :"
-            docker ps
             
             echo "Nettoyage terminé !"
           ENDSSH
@@ -108,15 +98,9 @@ jobs:
         if: always()
         run: |
           if [ "${{ job.status }}" == "success" ]; then
-            echo "✅ DÉPLOIEMENT RÉUSSI"
-            echo "🌐 Services disponibles :"
-            echo "  - Auth: https://auth.yourdomain.com"
-            echo "  - Convoc: https://convoc.yourdomain.com"
-            echo "  - Email: https://email.yourdomain.com"
-            echo "  - Files: https://files.yourdomain.com"
-            echo "  - Notifications: https://notifications.yourdomain.com"
-            echo "  - RabbitMQ: https://rabbitmq.yourdomain.com"
+            echo "DÉPLOIEMENT RÉUSSI"
+            echo "L'application est maintenant en ligne à http://${{ secrets.VPS_HOST }}"
           else
-            echo "❌ ÉCHEC DU DÉPLOIEMENT"
+            echo "ÉCHEC DU DÉPLOIEMENT"
             echo "Vérifiez les journaux ci-dessus pour plus de détails"
           fi

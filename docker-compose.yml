@@ -1,27 +1,39 @@
-# docker-compose.yml
-
 version: '3.8'
+
 services:
   postgres:
     container_name: poc-postgres
-    image: postgres
+    image: postgres:16-alpine
     restart: always
+    networks:
+      - internal-network
     environment:
       - POSTGRES_USER=poc
       - POSTGRES_PASSWORD=P@ssw0rd
       - POSTGRES_DB=db_poc
     volumes:
       - poc-postgres:/var/lib/postgresql/data
-    ports:
-      - '5434:5432'
+    # Ports exposés seulement en interne
+    expose:
+      - '5432'
 
   rabbitmq:
     container_name: poc-rabbitmq
     image: rabbitmq:4-management
     restart: always
-    ports:
-      - '15674:15672' # RabbitMQ Management UI
-      - '5674:5672' # RabbitMQ AMQP protocol
+    networks:
+      - internal-network
+      - traefik-network
+    expose:
+      - '5672'
+      - '15672'
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.rabbitmq.rule=Host(`rabbitmq.nutefe.click`)'
+      - 'traefik.http.routers.rabbitmq.entrypoints=websecure'
+      - 'traefik.http.routers.rabbitmq.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.rabbitmq.loadbalancer.server.port=15672'
+      - 'traefik.docker.network=traefik-network'
 
   auth-service:
     container_name: poc-auth-service
@@ -31,11 +43,14 @@ services:
       target: development
     command: sh -c "npx prisma generate && pnpm run start:dev auth-services"
     restart: always
+    networks:
+      - internal-network
+      - traefik-network
     env_file:
       - .env.docker
       - ./apps/auth-services/.env.docker
-    ports:
-      - '3005:3005'
+    expose:
+      - '3005'
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
@@ -43,6 +58,13 @@ services:
     depends_on:
       - postgres
       - rabbitmq
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.auth-service.rule=Host(`auth.nutefe.click`)'
+      - 'traefik.http.routers.auth-service.entrypoints=websecure'
+      - 'traefik.http.routers.auth-service.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.auth-service.loadbalancer.server.port=3005'
+      - 'traefik.docker.network=traefik-network'
 
   convoc-service:
     container_name: poc-convoc-service
@@ -52,11 +74,14 @@ services:
       target: development
     command: sh -c "npx prisma generate && pnpm run start:dev convoc-services"
     restart: always
+    networks:
+      - internal-network
+      - traefik-network
     env_file:
       - .env.docker
       - ./apps/convoc-services/.env.docker
-    ports:
-      - '3008:3008'
+    expose:
+      - '3008'
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
@@ -68,6 +93,13 @@ services:
       - email-service
       - notification-service
       - file-service
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.convoc-service.rule=Host(`convoc.nutefe.click`)'
+      - 'traefik.http.routers.convoc-service.entrypoints=websecure'
+      - 'traefik.http.routers.convoc-service.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.convoc-service.loadbalancer.server.port=3008'
+      - 'traefik.docker.network=traefik-network'
 
   email-service:
     container_name: poc-email-service
@@ -77,11 +109,14 @@ services:
       target: development
     command: sh -c "npx prisma generate && pnpm run start:dev email-services"
     restart: always
+    networks:
+      - internal-network
+      - traefik-network
     env_file:
       - .env.docker
       - ./apps/email-services/.env.docker
-    ports:
-      - '3007:3007'
+    expose:
+      - '3007'
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
@@ -90,7 +125,14 @@ services:
       - postgres
       - rabbitmq
       - auth-service
-  
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.email-service.rule=Host(`email.nutefe.click`)'
+      - 'traefik.http.routers.email-service.entrypoints=websecure'
+      - 'traefik.http.routers.email-service.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.email-service.loadbalancer.server.port=3007'
+      - 'traefik.docker.network=traefik-network'
+
   file-service:
     container_name: poc-file-service
     build:
@@ -99,11 +141,14 @@ services:
       target: development
     command: sh -c "npx prisma generate && pnpm run start:dev file-services"
     restart: always
+    networks:
+      - internal-network
+      - traefik-network
     env_file:
       - .env.docker
       - ./apps/file-services/.env.docker
-    ports:
-      - '3009:3009'
+    expose:
+      - '3009'
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
@@ -112,7 +157,14 @@ services:
       - postgres
       - rabbitmq
       - auth-service
-    
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.file-service.rule=Host(`files.nutefe.click`)'
+      - 'traefik.http.routers.file-service.entrypoints=websecure'
+      - 'traefik.http.routers.file-service.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.file-service.loadbalancer.server.port=3009'
+      - 'traefik.docker.network=traefik-network'
+
   notification-service:
     container_name: poc-notification-service
     build:
@@ -121,11 +173,14 @@ services:
       target: development
     command: sh -c "npx prisma generate && pnpm run start:dev notification-services"
     restart: always
+    networks:
+      - internal-network
+      - traefik-network
     env_file:
       - .env.docker
       - ./apps/notification-services/.env.docker
-    ports:
-      - '3010:3006'
+    expose:
+      - '3006'
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
@@ -134,6 +189,19 @@ services:
       - postgres
       - rabbitmq
       - auth-service
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.notification-service.rule=Host(`notifications.nutefe.click`)'
+      - 'traefik.http.routers.notification-service.entrypoints=websecure'
+      - 'traefik.http.routers.notification-service.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.notification-service.loadbalancer.server.port=3006'
+      - 'traefik.docker.network=traefik-network'
+
+networks:
+  traefik-network:
+    external: true
+  internal-network:
+    driver: bridge
 
 volumes:
   poc-postgres:

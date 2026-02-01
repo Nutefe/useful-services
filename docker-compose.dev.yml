@@ -1,0 +1,139 @@
+# docker-compose.yml
+
+version: '3.8'
+services:
+  postgres:
+    container_name: poc-postgres
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=poc
+      - POSTGRES_PASSWORD=P@ssw0rd
+      - POSTGRES_DB=db_poc
+    volumes:
+      - poc-postgres:/var/lib/postgresql/data
+    ports:
+      - '5434:5432'
+
+  rabbitmq:
+    container_name: poc-rabbitmq
+    image: rabbitmq:4-management
+    restart: always
+    ports:
+      - '15674:15672' # RabbitMQ Management UI
+      - '5674:5672' # RabbitMQ AMQP protocol
+
+  auth-service:
+    container_name: poc-auth-service
+    build:
+      context: .
+      dockerfile: ./apps/auth-services/Dockerfile
+      target: development
+    command: sh -c "npx prisma generate && pnpm run start:dev auth-services"
+    restart: always
+    env_file:
+      - .env.docker
+      - ./apps/auth-services/.env.docker
+    ports:
+      - '3005:3005'
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+      - /usr/src/app/node_modules/.prisma
+    depends_on:
+      - postgres
+      - rabbitmq
+
+  convoc-service:
+    container_name: poc-convoc-service
+    build:
+      context: .
+      dockerfile: ./apps/convoc-services/Dockerfile
+      target: development
+    command: sh -c "npx prisma generate && pnpm run start:dev convoc-services"
+    restart: always
+    env_file:
+      - .env.docker
+      - ./apps/convoc-services/.env.docker
+    ports:
+      - '3008:3008'
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+      - /usr/src/app/node_modules/.prisma
+    depends_on:
+      - postgres
+      - rabbitmq
+      - auth-service
+      - email-service
+      - notification-service
+      - file-service
+
+  email-service:
+    container_name: poc-email-service
+    build:
+      context: .
+      dockerfile: ./apps/email-services/Dockerfile
+      target: development
+    command: sh -c "npx prisma generate && pnpm run start:dev email-services"
+    restart: always
+    env_file:
+      - .env.docker
+      - ./apps/email-services/.env.docker
+    ports:
+      - '3007:3007'
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+      - /usr/src/app/node_modules/.prisma
+    depends_on:
+      - postgres
+      - rabbitmq
+      - auth-service
+  
+  file-service:
+    container_name: poc-file-service
+    build:
+      context: .
+      dockerfile: ./apps/file-services/Dockerfile
+      target: development
+    command: sh -c "npx prisma generate && pnpm run start:dev file-services"
+    restart: always
+    env_file:
+      - .env.docker
+      - ./apps/file-services/.env.docker
+    ports:
+      - '3009:3009'
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+      - /usr/src/app/node_modules/.prisma
+    depends_on:
+      - postgres
+      - rabbitmq
+      - auth-service
+    
+  notification-service:
+    container_name: poc-notification-service
+    build:
+      context: .
+      dockerfile: ./apps/notification-services/Dockerfile
+      target: development
+    command: sh -c "npx prisma generate && pnpm run start:dev notification-services"
+    restart: always
+    env_file:
+      - .env.docker
+      - ./apps/notification-services/.env.docker
+    ports:
+      - '3010:3006'
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+      - /usr/src/app/node_modules/.prisma
+    depends_on:
+      - postgres
+      - rabbitmq
+      - auth-service
+
+volumes:
+  poc-postgres:
